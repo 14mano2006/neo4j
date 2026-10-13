@@ -1,0 +1,289 @@
+UNIVERSITY COURSE REGISTRATION SYSTEM USING NEO4J
+Graph Analytics - Assignment 5
+Course Code: E1ITC 302
+
+============================================================
+1. CREATE CONSTRAINTS
+============================================================
+
+CREATE CONSTRAINT student_id_unique IF NOT EXISTS
+FOR (s:Student) REQUIRE s.student_id IS UNIQUE;
+
+CREATE CONSTRAINT faculty_id_unique IF NOT EXISTS
+FOR (f:Faculty) REQUIRE f.faculty_id IS UNIQUE;
+
+CREATE CONSTRAINT course_id_unique IF NOT EXISTS
+FOR (c:Course) REQUIRE c.course_id IS UNIQUE;
+
+CREATE CONSTRAINT department_id_unique IF NOT EXISTS
+FOR (d:Department) REQUIRE d.department_id IS UNIQUE;
+
+
+============================================================
+2. CREATE DEPARTMENT NODES
+============================================================
+
+CREATE
+  (cs:Department {department_id: 'D01', name: 'Computer Science'}),
+  (it:Department {department_id: 'D02', name: 'Information Technology'});
+
+
+============================================================
+3. CREATE COURSE NODES
+============================================================
+
+CREATE
+  (ga:Course {course_id: 'C101', name: 'Graph Analytics', credits: 4, semester: 5}),
+  (dbms:Course {course_id: 'C102', name: 'Database Management Systems', credits: 4, semester: 5}),
+  (dm:Course {course_id: 'C103', name: 'Data Mining', credits: 3, semester: 5}),
+  (bda:Course {course_id: 'C104', name: 'Big Data Analytics', credits: 4, semester: 5}),
+  (nosql:Course {course_id: 'C105', name: 'NoSQL Databases', credits: 3, semester: 5});
+
+
+============================================================
+4. CREATE FACULTY NODES
+============================================================
+
+CREATE
+  (meera:Faculty {faculty_id: 'F01', name: 'Dr. Meera Sen', designation: 'Associate Professor'}),
+  (amit:Faculty {faculty_id: 'F02', name: 'Dr. Amit Roy', designation: 'Assistant Professor'});
+
+
+============================================================
+5. CREATE STUDENT NODES
+============================================================
+
+CREATE
+  (aarav:Student {student_id: 'S101', name: 'Aarav Sharma', semester: 5}),
+  (priya:Student {student_id: 'S102', name: 'Priya Das', semester: 5}),
+  (rahul:Student {student_id: 'S103', name: 'Rahul Verma', semester: 4}),
+  (sneha:Student {student_id: 'S104', name: 'Sneha Roy', semester: 4}),
+  (arjun:Student {student_id: 'S105', name: 'Arjun Patel', semester: 5});
+
+
+============================================================
+6. CREATE BELONGS_TO RELATIONSHIPS
+============================================================
+
+MATCH (s:Student), (d:Department)
+WHERE (s.name IN ['Aarav Sharma', 'Priya Das', 'Rahul Verma'] AND d.name = 'Computer Science')
+   OR (s.name IN ['Sneha Roy', 'Arjun Patel'] AND d.name = 'Information Technology')
+CREATE (s)-[:BELONGS_TO]->(d);
+
+
+============================================================
+7. CREATE OFFERS RELATIONSHIPS
+============================================================
+
+MATCH (d:Department), (c:Course)
+WHERE (d.name = 'Computer Science' AND c.name IN [
+  'Database Management Systems', 'Data Mining', 'NoSQL Databases'
+])
+   OR (d.name = 'Information Technology' AND c.name IN [
+  'Graph Analytics', 'Big Data Analytics'
+])
+CREATE (d)-[:OFFERS]->(c);
+
+
+============================================================
+8. CREATE TEACHES RELATIONSHIPS
+============================================================
+
+MATCH (f:Faculty), (c:Course)
+WHERE (f.name = 'Dr. Meera Sen' AND c.name IN [
+  'Database Management Systems', 'NoSQL Databases'
+])
+   OR (f.name = 'Dr. Amit Roy' AND c.name IN [
+  'Graph Analytics', 'Data Mining', 'Big Data Analytics'
+])
+CREATE (f)-[:TEACHES]->(c);
+
+
+============================================================
+9. CREATE ENROLLED_IN RELATIONSHIPS
+============================================================
+
+MATCH (s:Student), (c:Course)
+WHERE (s.name = 'Aarav Sharma' AND c.name IN [
+  'Graph Analytics', 'Database Management Systems', 'NoSQL Databases'
+])
+   OR (s.name = 'Priya Das' AND c.name IN [
+  'Graph Analytics', 'Data Mining'
+])
+   OR (s.name = 'Rahul Verma' AND c.name IN [
+  'Database Management Systems', 'Big Data Analytics'
+])
+   OR (s.name = 'Sneha Roy' AND c.name IN [
+  'Data Mining', 'NoSQL Databases'
+])
+   OR (s.name = 'Arjun Patel' AND c.name IN [
+  'Graph Analytics', 'Big Data Analytics'
+])
+CREATE (s)-[:ENROLLED_IN]->(c);
+
+
+============================================================
+10. VERIFY NODE COUNTS
+============================================================
+
+MATCH (n)
+RETURN labels(n) AS NodeType, count(n) AS TotalNodes
+ORDER BY NodeType;
+
+
+============================================================
+11. VERIFY RELATIONSHIP COUNTS
+============================================================
+
+MATCH ()-[r]->()
+RETURN type(r) AS RelationshipType, count(r) AS TotalRelationships
+ORDER BY RelationshipType;
+
+
+============================================================
+12. DISPLAY THE COMPLETE GRAPH
+============================================================
+
+MATCH (n)
+OPTIONAL MATCH (n)-[r]-(m)
+RETURN n, r, m;
+
+
+============================================================
+13. QUERY 1: DISPLAY ALL STUDENTS
+============================================================
+
+MATCH (s:Student)
+RETURN s.student_id AS StudentID, s.name AS StudentName, s.semester AS Semester
+ORDER BY StudentName;
+
+
+============================================================
+14. QUERY 2: DISPLAY ALL COURSES
+============================================================
+
+MATCH (c:Course)
+RETURN c.course_id AS CourseID, c.name AS CourseName,
+       c.credits AS Credits, c.semester AS Semester
+ORDER BY CourseName;
+
+
+============================================================
+15. QUERY 3: FIND STUDENTS ENROLLED IN GRAPH ANALYTICS
+============================================================
+
+MATCH (s:Student)-[:ENROLLED_IN]->(c:Course {name: 'Graph Analytics'})
+RETURN s.name AS StudentName
+ORDER BY StudentName;
+
+
+============================================================
+16. QUERY 4: FIND COURSES WITH MORE THAN 3 CREDITS
+============================================================
+
+MATCH (c:Course)
+WHERE c.credits > 3
+RETURN c.name AS CourseName, c.credits AS Credits
+ORDER BY CourseName;
+
+
+============================================================
+17. QUERY 5: FIND COURSES TAUGHT BY DR. MEERA SEN
+============================================================
+
+MATCH (f:Faculty {name: 'Dr. Meera Sen'})-[:TEACHES]->(c:Course)
+RETURN f.name AS FacultyName, c.name AS CourseName
+ORDER BY CourseName;
+
+
+============================================================
+18. QUERY 6: FIND ALL STUDENTS IN SEMESTER 5
+============================================================
+
+MATCH (s:Student)
+WHERE s.semester = 5
+RETURN s.name AS StudentName, s.semester AS Semester
+ORDER BY StudentName;
+
+
+============================================================
+19. QUERY 7: FIND STUDENTS BELONGING TO COMPUTER SCIENCE
+============================================================
+
+MATCH (s:Student)-[:BELONGS_TO]->(d:Department {name: 'Computer Science'})
+RETURN s.name AS StudentName, d.name AS Department
+ORDER BY StudentName;
+
+
+============================================================
+20. QUERY 8: FIND COURSES OFFERED BY INFORMATION TECHNOLOGY
+============================================================
+
+MATCH (d:Department {name: 'Information Technology'})-[:OFFERS]->(c:Course)
+RETURN d.name AS Department, c.name AS CourseName
+ORDER BY CourseName;
+
+
+============================================================
+21. QUERY 9: COUNT STUDENTS ENROLLED IN EACH COURSE
+============================================================
+
+MATCH (s:Student)-[:ENROLLED_IN]->(c:Course)
+RETURN c.name AS CourseName, count(s) AS StudentCount
+ORDER BY CourseName;
+
+
+============================================================
+22. QUERY 10: FIND COURSES TAKEN BY AARAV SHARMA
+============================================================
+
+MATCH (s:Student {name: 'Aarav Sharma'})-[:ENROLLED_IN]->(c:Course)
+RETURN s.name AS StudentName, c.name AS CourseName
+ORDER BY CourseName;
+
+
+============================================================
+23. QUERY 11: FIND STUDENTS ENROLLED IN NOSQL DATABASES
+============================================================
+
+MATCH (s:Student)-[:ENROLLED_IN]->(c:Course {name: 'NoSQL Databases'})
+RETURN s.name AS StudentName
+ORDER BY StudentName;
+
+
+============================================================
+24. QUERY 12: FIND FACULTY AND THE COURSES THEY TEACH
+============================================================
+
+MATCH (f:Faculty)-[:TEACHES]->(c:Course)
+RETURN f.name AS FacultyName, collect(c.name) AS CoursesTaught
+ORDER BY FacultyName;
+
+
+============================================================
+25. QUERY 13: COUNT STUDENTS IN EACH DEPARTMENT
+============================================================
+
+MATCH (s:Student)-[:BELONGS_TO]->(d:Department)
+RETURN d.name AS Department, count(s) AS StudentCount
+ORDER BY Department;
+
+
+============================================================
+26. QUERY 14: FIND STUDENTS ENROLLED IN TWO OR MORE COURSES
+============================================================
+
+MATCH (s:Student)-[:ENROLLED_IN]->(c:Course)
+WITH s, count(c) AS NumberOfCourses
+WHERE NumberOfCourses >= 2
+RETURN s.name AS StudentName, NumberOfCourses
+ORDER BY StudentName;
+
+
+============================================================
+27. OPTIONAL: CLEAR ALL NODES AND RELATIONSHIPS
+WARNING: This deletes the entire graph. Run only if you want to reset.
+============================================================
+
+MATCH (n)
+DETACH DELETE n;
